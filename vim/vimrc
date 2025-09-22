@@ -1,0 +1,997 @@
+"https://github.com/nikolalsvk/dotfiles/blob/master/.vimrc
+"https://github.com/mikeslattery/dotfiles/blob/master/.config/nvim/init.vim#L138
+"
+"------------------------------------------------------------------------------------
+" Sensible Defaults 
+"------------------------------------------------------------------------------------
+" https://github.com/tpope/vim-sensible/blob/master/plugin/sensible.vim 
+
+set display+=lastline
+if has('patch-7.4.2109')
+	set display+=truncate
+endif
+
+" Delete comment character when joining commented lines.
+if v:version > 703 || v:version == 703 && has("patch541")
+	set formatoptions+=j
+endif
+
+set sessionoptions=blank,buffers,curdir,folds,help,tabpages,winsize,terminal,skiprtp
+set viewoptions=folds,cursor,curdir
+
+" Disable a legacy behavior that can break plugin maps.
+if has('langmap') && exists('+langremap') && &langremap
+	set nolangremap
+endif
+
+if !(exists('g:did_load_filetypes') && exists('g:did_load_ftplugin') && exists('g:did_indent_on'))
+	filetype plugin indent on
+endif
+
+if has('syntax') && !exists('g:syntax_on')
+	syntax enable
+endif
+
+
+" From `:help :DiffOrig`.
+if exists(":DiffOrig") != 2
+	command DiffOrig vert new | set bt=nofile | r ++edit # | 0d_ | diffthis | wincmd p | diffthis
+endif
+
+"" Correctly highlight $() and other modern affordances in filetype=sh.
+if !exists('g:is_posix') && !exists('g:is_bash') && !exists('g:is_kornshell') && !exists('g:is_dash')
+	let g:is_posix = 1
+endif
+
+"" Enable the :Man command shipped insdie of Vim's man filetype plugin.
+if exists(':Man') != 2 && !exists('g:loaded_man') && &filetype !=? 'man' && !has('nvim')
+	  runtime ftplugin/man.vim
+endif
+
+"------------------------------------------------------------------------------------
+" Settings
+"------------------------------------------------------------------------------------
+
+let localleader = "\\"
+let maplocalleader = "\<BS>"
+
+"set nocompatible " this should already be set, apparently setting it twice can cause issues
+set number
+set relativenumber
+set cursorline " show selection highlight behind cursor
+set noshowcmd " dont show command being processed
+set cmdheight=1 "height of the command output area
+set mouse=a "enable mouse support by defualt, use mouse=a to disable
+
+set tabstop=4
+set softtabstop=4
+set shiftwidth=4
+set noexpandtab
+set breakindent
+set smarttab
+set nowrap 
+set linebreak " only wrap on words not on characters
+set textwidth=0 
+set wrapmargin=0
+
+set noswapfile
+set nobackup
+set nowritebackup
+set updatetime=50 " update time for CursorHold, etc
+set noautoread " autoread is unreliable, best to use :e to force a reload if something changed
+
+set hlsearch
+set incsearch
+set ignorecase "case insenstive search unless \C or one or more capital letters in search term
+set smartcase
+
+set nolist
+"set listchars=tab:»\ ,trail:·,nbsp:␣
+set listchars=tab:>\ ,trail:-,extends:>,precedes:<,nbsp:+
+set backspace=indent,eol,start
+
+set splitbelow
+set splitright
+
+set scrolloff=8 "minimum number of screen lines to keep above and below cursor
+set sidescroll=1
+set sidescrolloff=4
+
+set signcolumn=yes
+set wildmenu
+"set wildmode=longest:list,full
+
+let g:netrw_liststyle = 3
+let g:netrw_altv = 1
+
+"set notimeout
+set timeoutlen=10000 "prefer notimeout, but that makes it hang when leaving insert mode, doing this instead..
+"set ttimeout 
+set ttimeoutlen=0  "removes delay from leaving visualblock mode..
+
+"status line stuff
+set laststatus=1  "only show status bar if multiple buffers open
+set ruler         "shows location in document onbottom right
+set shortmess-=S  "shows seach counts on bottom right when searching
+
+"------------------------------------------------------------------------------------
+" Theme
+"------------------------------------------------------------------------------------
+
+if has('nvim')
+	set background=dark
+	set termguicolors
+endif
+
+if !has('nvim') 
+	set background=dark
+	try
+		"some people say this is needed to make termguicolors to work
+		"set t_Co=256
+		"set t_ut=
+
+		"enables use of termguicolors when using term with t-mux
+		if !has('gui_running') && &term =~ '\%(screen\|tmux\)'
+			let &t_8f = "\<Esc>[38;2;%lu;%lu;%lum"
+			let &t_8b = "\<Esc>[48;2;%lu;%lu;%lum"
+		endif
+		set termguicolors
+		colorscheme hybrid
+		"colorscheme codedark
+	catch
+		set notermguicolors
+		"colorscheme default
+		highlight LineNr ctermfg=darkgray
+		highlight SignColumn ctermbg=darkgray	
+	endtry
+
+
+	""" alac based termguicolors
+	hi StatusLine         ctermbg=darkgray ctermfg=black guibg=#cccccc guifg=#090909
+	hi StatusLineNC       ctermbg=black ctermfg=darkgray guibg=#cccccc guifg=#090909
+	hi StatusLineSection  ctermbg=darkgray ctermfg=black guibg=#090909 guifg=#cccccc
+	hi StatusLineSectionV ctermbg=darkyellow ctermfg=black guibg=#f4bf75 guifg=#090909
+	hi StatusLineSectionI ctermbg=darkgreen ctermfg=black guibg=#90a959 guifg=#090909
+	hi StatusLineSectionC ctermbg=darkblue ctermfg=black guibg=#6a9fb5 guifg=#090909
+	hi StatusLineSectionR ctermbg=green ctermfg=black guibg=#aac474 guifg=#090909
+
+	"hi Conceal ctermbg=black ctermfg=lightgray guibg=#1d1f21 guifg=#cccccc
+	hi Conceal cterm=underline ctermbg=black ctermfg=lightgray term=underline guibg=#090909 guifg=#cccccc
+
+	""" curosr shape
+	let &t_SI = "\e[5 q"   " cursor in insert mode
+	let &t_EI = "\e[2 q"   " cursor in normal mode
+	let &t_SR = "\e[3 q"   " cursor in replace mode
+	let &t_ti .= "\e[2 q"  " cursor when vim starts
+	let &t_te .= "\e[2 q"  " cursor when vim exits
+
+endif
+
+"""statusline
+"set statusline=%f
+"set statusline=[%n]\ %<%f%h%m
+
+""" Update status line colors 
+" https://sidneyliebrand.io/blog/creating-my-own-vim-statusline
+
+let g:mode_colors = {'n':'StatusLineSection', 'v':'StatusLineSectionV', '^V': 'StatusLineSectionV', 'i':  'StatusLineSectionI', 'c':  'StatusLineSectionC', 'r':  'StatusLineSectionR'}
+
+"let g:statusline_left = '%f %h%m%r'
+let g:statusline_left = '[%n]%#StatusLine# %<%f%r%h%m%w'
+" let g:statusline_right = ' [%{&ff}] [%{&fileencoding}] %y %=%-14.(%l,%c%V%)%P '
+let g:statusline_extra_right = ''
+
+function! StatusLineRenderer()
+	let hl = '%#' . get(g:mode_colors, tolower(mode()), g:mode_colors.n) . '#'
+	return  hl.g:statusline_left .' %='. g:statusline_extra_right.' %y %-14.(%l,%c%V%)%P '
+endfunction
+
+" only set default statusline once on initial startup. ignored on subsequent 'so $MYVIMRC' calls to prevent active buffer statusline from being 'blurred'.
+if has('vim_starting')
+	let &statusline = g:statusline_left
+endif
+
+augroup statusline_update
+	au!
+	" show focussed buffer statusline
+	au FocusGained,VimEnter,WinEnter,BufWinEnter * setlocal statusline=%!StatusLineRenderer()
+
+	" show blurred buffer statusline
+	au FocusLost,VimLeave,WinLeave * setlocal statusline&
+	"au FocusLost,VimLeave,WinLeave,BufWinLeave * setlocal statusline=%!StatusLineRenderer()
+
+augroup END
+
+
+""" Toggle laststatus between 1 and 2
+function! <SID>ToggleLastStatus()
+	if &laststatus == 2
+		set laststatus=1
+	else
+		set laststatus=2
+	endif
+endfunction
+nnoremap <silent> <F9> :<C-u>call <SID>ToggleLastStatus()<CR>
+vnoremap <silent> <F9> <Esc>:call <SID>ToggleLastStatus()<CR>v
+inoremap <silent> <F9> <Esc>:call <SID>ToggleLastStatus()<CR>i<Right>
+
+"------------------------------------------------------------------------------------
+" Auto commands
+"------------------------------------------------------------------------------------
+
+""" filetypes
+"autocmd FileType javascript setlocal shiftwidth=4 tabstop=4
+augroup DefaultFileTypes
+	autocmd!
+	au BufRead,BufNewFile .env.* setfiletype pamenv
+augroup end
+
+
+""" highlght yanked text
+" https://www.statox.fr/posts/2020/07/vim_flash_yanked_text/
+augroup ShowYankedText
+	autocmd!
+	autocmd TextYankPost * call ShowYankedText()
+augroup end
+
+function! ShowYankedText()
+	let yanked_text = getreg('0')
+	let sanitized_text = substitute(yanked_text, '\n$', '', 'g') "remove last newline			
+	call system('tmux load-buffer -w -', sanitized_text)
+
+	"let yanked_text = substitute(yanked_text, '\n', '\\n', 'g')
+	"echo "Yanked text: " . yanked_text
+
+	if (!exists('g:yankedTextMatches'))
+		let g:yankedTextMatches = []
+	endif
+
+	let matchId = matchadd('IncSearch', ".\\%>'\\[\\_.*\\%<']..")
+	let windowId = winnr()
+
+	call add(g:yankedTextMatches, [windowId, matchId])
+	call timer_start(500, 'DeleteTemporaryMatch')
+
+
+endfunction
+
+function! DeleteTemporaryMatch(timerId)
+	while !empty(g:yankedTextMatches)
+		let match = remove(g:yankedTextMatches, 0)
+		let windowID = match[0]
+		let matchID = match[1]
+
+		try
+			call matchdelete(matchID, windowID)
+		endtry
+	endwhile
+endfunction
+
+
+""" Remember cursor position when opening a file directly
+augroup RememberCursorPosition
+	au!
+	au BufReadPost * if line("'\"") > 0 && line("'\"") <= line("$") | exe "normal! g`\"" | endif
+augroup end
+
+"------------------------------------------------------------------------------------
+" Noremaps with Autocommands
+"------------------------------------------------------------------------------------
+
+""" automatic mksession
+" updates a session if it exists
+" loads session if it exists and vim started with no arguments
+" https://vim.fandom.com/wiki/Go_away_and_come_back
+" https://stackoverflow.com/questions/1642611/how-to-save-and-restore-multiple-different-sessions-in-vim
+
+" Creates a session
+function! MakeSession()
+	let b:sessiondir = $HOME . "/.vim/sessions" . getcwd()
+	if (filewritable(b:sessiondir) != 2)
+		exe 'silent !mkdir -p ' b:sessiondir
+		redraw!
+	endif
+	let b:sessionfile = b:sessiondir . '/session.vim'
+	exe "mksession! " . b:sessionfile
+	echom "created session: ". b:sessionfile
+endfunction
+
+" Updates a session, BUT ONLY IF IT ALREADY EXISTS
+function! UpdateSession()
+	let b:sessiondir = $HOME . "/.vim/sessions" . getcwd()
+	let b:sessionfile = b:sessiondir . "/session.vim"
+	if (filereadable(b:sessionfile))
+		exe "mksession! " . b:sessionfile
+		echom "updated session: " . b:sessionfile
+	endif
+endfunction
+
+" Load session if vim was launched without arguments
+function! RecoverSession()
+	"echom "Number of arguments: " . argc()
+	"for i in range(0, argc() - 1)
+	"    echom "Argument " . i . ": " . argv(i)
+	"endfor
+	if argc() == 0
+		call LoadSession()
+	else
+		let b:sessionfile = ""
+		let b:sessiondir = ""
+		echom "no session to load. vim opened with arguments"
+	endif
+
+endfunction
+
+" Loads a session if it exists
+function! LoadSession()
+	let b:sessiondir = $HOME . "/.vim/sessions" . getcwd()
+	let b:sessionfile = b:sessiondir . "/session.vim"
+	let l:sessionfile = b:sessionfile
+	if (filereadable(b:sessionfile))
+		exe 'source ' b:sessionfile
+		echom "loaded session: " . l:sessionfile
+	else
+		echom "no session to load."
+	endif
+endfunction
+
+augroup AutoMksession
+	au!
+	au VimEnter * nested :call RecoverSession()
+	au VimLeave * :call UpdateSession()
+augroup END
+nnoremap <silent> <leader>ms :call MakeSession()<CR>
+nnoremap <silent> <leader>ml :call LoadSession()<CR>
+nnoremap <silent> <leader>mbufd :<C-u>bufdo bwipeout<CR>
+
+
+""" Commenting blocks of code.
+augroup CommentingBlocksOfCode
+	autocmd!
+	autocmd FileType c,cpp,java,scala,ts,js,tsx,jsx			let b:comment_leader = '// '
+	autocmd FileType sh,ruby,python,conf,fstab,pamenv,tmux  let b:comment_leader = '# '
+	autocmd FileType tex									let b:comment_leader = '% '
+	autocmd FileType lua								    let b:comment_leader = '-- '
+	autocmd FileType mail								    let b:comment_leader = '> '
+	autocmd FileType vim,vimrc							    let b:comment_leader = '" '
+" " augroup end
+nnoremap <silent> gcc :<C-B>silent <C-E>s/^/<C-R>=escape(b:comment_leader,'\/')<CR>/<CR>:nohlsearch<CR>
+nnoremap <silent> gcC :<C-B>silent <C-E>s/^\V<C-R>=escape(b:comment_leader,'\/')<CR>//e<CR>:nohlsearch<CR>
+
+""" keybinding ctrl+i insert paste mode
+augroup DisablePasteOnLeaveInsert
+	autocmd!
+	autocmd InsertLeave * set nopaste
+augroup end
+nnoremap <c-i> :set paste<CR>i
+"inoremap <c-i> <Esc>:set paste<CR>i
+
+"------------------------------------------------------------------------------------
+" Noremaps (Universal)
+"------------------------------------------------------------------------------------
+
+nnoremap <C-j> :m +1<CR>
+nnoremap <C-k> :m -2<CR>
+inoremap <C-j> <Esc>:m +1<CR>gi
+inoremap <C-k> <Esc>:m -2<CR>gi
+
+nnoremap <C-down> :m +1<CR>
+nnoremap <C-up> :m -2<CR>
+inoremap <C-down> <Esc>:m +1<CR>gi
+inoremap <C-up> <Esc>:m -2<CR>gi
+
+nnoremap <Cr> O<Esc>j
+vnoremap <Cr> y
+
+""" Keep replace mode from being activated
+inoremap <Insert> <Esc><Right>
+
+""" alternate way to enter visual block mode to deal with terminal emulators
+nnoremap <leader>v <C-v>
+
+""" Close Window
+nnoremap <leader>q :q<CR>
+vnoremap <leader>q <esc>:q<CR>
+
+""" Save File
+nnoremap <leader>w :w<CR>
+vnoremap <leader>w :w<CR>
+
+""" Change Edit 
+
+nnoremap cet "_ciwtrue<esc>h
+nnoremap cef "_ciwfalse<esc>hh
+nnoremap cen "_ciwnull<esc>hh
+nnoremap ceu "_ciwundefined<esc>hhhhh
+
+nnoremap cEt "_ciWtrue<esc>h
+nnoremap cEf "_ciWfalse<esc>hh
+nnoremap cEn "_ciWnull<esc>hh
+nnoremap cEu "_ciWundefined<esc>hhhhh
+
+
+""" Surround
+" surround line with xml tag using user input
+"  1-change text on line cc   2-put user input to h register hdiwP  3- paste original contents  4- paste closig tag with contents from step 2                        
+nnoremap <expr> csst "<ESC>^v$\"ndi<".input("Input Tag Name: ")."><Esc><Left>\"hdiwP<Right>\"np$a</><esc>\"hP"."<ESC>ditP"
+
+" surround word with xml tag using user input
+nnoremap <expr> csiwt "<ESC>\"nciw<".input("Input Tag Name: ")."><Esc><Left>\"hdiwP<Right>\"npa</><esc>\"hP"."<ESC>ditP"
+
+"surround tag contents with xml tag using user input
+nnoremap <expr> csitt "<ESC>\"ncit<".input("Input Tag Name: ")."><Esc><Left>\"hdiwP<Right>\"npa</><esc>\"hP"."<ESC>ditP"
+
+"surround tag with xml tag using user input
+nnoremap <expr> csatt "<ESC>\"ncat<".input("Input Tag Name: ")."><Esc><Left>\"hdiwP<Right>\"npa</><esc>\"hP"."<ESC>ditP"
+
+" delete surrounding xml tag
+" theres a bug with this where the text will end up 1 character to the left if there is no tag enclosing it at all...
+nnoremap dst dit"_datP
+
+nnoremap cs"' di"<Left>R''<Esc>P
+nnoremap cs"` di"<Left>R``<Esc>P
+nnoremap cs"< di"<Left>R<><Esc>P
+nnoremap cs"( di"<Left>R()<Esc>P
+nnoremap cs"[ di"<Left>R[]<Esc>P
+nnoremap cs"{ di"<Left>R{}<Esc>P
+nnoremap cs"<BS> ci"<Right><BS><BS><Esc>p<Esc>
+nnoremap ds" ci"<Right><BS><BS><Esc>p<Esc>
+
+nnoremap cs'" di'<Left>R""<Esc>P
+nnoremap cs'` di'<Left>R``<Esc>P
+nnoremap cs'< di'<Left>R<><Esc>P
+nnoremap cs'( di'<Left>R()<Esc>P
+nnoremap cs'[ di'<Left>R[]<Esc>P
+nnoremap cs'{ di'<Left>R{}<Esc>P
+nnoremap cs'<BS> ci'<Right><BS><BS><Esc>p<Esc>
+nnoremap ds' ci'<Right><BS><BS><Esc>p<Esc>
+
+nnoremap cs`" di`<Left>R""<Esc>P
+nnoremap cs`' di`<Left>R''<Esc>P
+nnoremap cs`< di`<Left>R<><Esc>P
+nnoremap cs`( di`<Left>R()<Esc>P
+nnoremap cs`[ di`<Left>R[]<Esc>P
+nnoremap cs`{ di`<Left>R{}<Esc>P
+nnoremap cs`<BS> ci`<Right><BS><BS><Esc>p<Esc>
+nnoremap ds` ci`<Right><BS><BS><Esc>p<Esc>
+
+nnoremap cs<" di<<Left>R""<Esc>P
+nnoremap cs<' di<<Left>R''<Esc>P
+nnoremap cs<` di<<Left>R``<Esc>P
+nnoremap cs<( di<<Left>R()<Esc>P
+nnoremap cs<[ di<<Left>R[]<Esc>P
+nnoremap cs<{ di<<Left>R{}<Esc>P
+nnoremap cs<<BS> ci<<Right><BS><BS><Esc>p<Esc>
+nnoremap ds< ci<<Right><BS><BS><Esc>p<Esc>
+
+nnoremap cs(" di(<Left>R""<Esc>P
+nnoremap cs(' di(<Left>R''<Esc>P
+nnoremap cs(` di(<Left>R``<Esc>P
+nnoremap cs(< di(<Left>R<><Esc>P
+nnoremap cs([ di(<Left>R[]<Esc>P
+nnoremap cs({ di(<Left>R{}<Esc>P
+nnoremap cs(<BS> ci(<Right><BS><BS><Esc>p<Esc>
+nnoremap ds( ci(<Right><BS><BS><Esc>p<Esc>
+
+nnoremap cs[" di[<Left>R""<Esc>P
+nnoremap cs[' di[<Left>R''<Esc>P
+nnoremap cs[` di[<Left>R``<Esc>P
+nnoremap cs[< di[<Left>R<><Esc>P
+nnoremap cs[( di[<Left>R()<Esc>P
+nnoremap cs[{ di[<Left>R{}<Esc>P
+nnoremap cs[<BS> ci[<Right><BS><BS><Esc>p<Esc>
+nnoremap ds[ ci[<Right><BS><BS><Esc>p<Esc>
+
+nnoremap cs{" di{<Left>R""<Esc>P
+nnoremap cs{' di{<Left>R''<Esc>P
+nnoremap cs{` di{<Left>R``<Esc>P
+nnoremap cs{< di{<Left>R<><Esc>P
+nnoremap cs{( di{<Left>R()<Esc>P
+nnoremap cs{[ di{<Left>R[]<Esc>P
+nnoremap cs{<BS> ci{<Right><BS><BS><Esc>p<Esc>
+nnoremap ds{ ci{<Right><BS><BS><Esc>p<Esc>
+
+" i want this to surround line with quotes but it doesnt work
+"nnoremap css" cc""<Esc>P
+nnoremap csiw" ciw""<Esc>P
+nnoremap csiw' ciw''<Esc>P
+nnoremap csiw` ciw``<Esc>P
+nnoremap csiw< ciw<><Esc>P
+nnoremap csiw( ciw()<Esc>P
+nnoremap csiw[ ciw[]<Esc>P
+nnoremap csiw{ ciw{}<Esc>P
+
+
+""" Stamp replace
+"https://vim.fandom.com/wiki/Replace_a_word_with_yanked_text
+" stamp replace word
+nnoremap sp "_ddP  
+
+nnoremap siw "_diwP 
+nnoremap siW "_diWP 
+nnoremap sit "_ditP 
+nnoremap si{ "_di{P
+nnoremap si[ "_di[P
+nnoremap si( "_di(P
+nnoremap si' "_di'P
+nnoremap si" "_di"P
+nnoremap si` "_di`P
+
+nnoremap saw "_dawP 
+nnoremap saW "_daWP 
+nnoremap sat "_datP 
+nnoremap sa{ "_da{P
+nnoremap sa[ "_da[P
+nnoremap sa( "_da(P
+nnoremap sa' "_da'P
+nnoremap sa" "_da"P
+nnoremap sa` "_da`P
+
+""" Replace last search text with last yanked text
+nnoremap ss :%s//\=@"/gc<cr>
+
+""" Incremental Rename
+nnoremap <leader>cn byiw:%s!<C-r>"!!gc<left><left><left>
+vnoremap <leader>cn "hy:%s!<C-r>h!!gc<left><left><left>
+
+""" Rename All
+"nnoremap <LocalLeader>cn "byiw:%s/<C-r>"//g<left><left>
+"vnoremap <LocalLeader>cn "hy:%s/<C-r>h//g<left><left>
+
+""" Cycle
+" https://github.com/zef/vim-cycle
+let s:options = {}
+let s:options['global'] = []
+let s:options['global'] = [ ['==', '!='], ['_', '-'], [' + ', ' - '], ['-=', '+='], ['&&', '||'], ['and', 'or'], ['if', 'unless'], ['true', 'false'], ['yes', 'no'], ['on', 'off'], ['running', 'stopped'], ['enabled', 'disabled'], ['first', 'last'], ['else', 'else if'], ]
+let s:options['vim'] = [  ['nnoremap', 'vnoremap', 'inoremap', 'xnoremap'], ]
+let s:options['python'] = [  ['else', 'elif'], ]
+let s:options['javascript'] = [  ['null', 'undefined'], ]
+let s:options['typescript'] = [  ['null', 'undefined'], ]
+
+function! s:Cycle(direction)
+  let filetype = &ft
+  let match = []
+
+  if has_key(s:options, filetype)
+    let match = s:matchInList(s:options[filetype])
+  endif
+
+  if empty(match)
+    let match = s:matchInList(s:options['global'])
+  endif
+
+  if empty(match)
+    if a:direction == 1
+      exe "norm! " . v:count1 . "\<C-A>"
+    else
+      exe "norm! " . v:count1 . "\<C-X>"
+    endif
+  else
+    let [group, start, end, string] = match
+
+    let index = index(group, string) + a:direction
+		let max_index = (len(group) - 1)
+
+		if index > max_index
+			let index = 0
+		endif
+
+    call s:replaceinline(start,end,group[index])
+  endif
+
+endfunction
+
+" if a match is found, return: [group, start, end, string]
+" if no match found,   return: []
+function! s:matchInList(list)
+  " reverse the list so the most recently defined matches are used
+   for group in a:list
+    " We must iterate each group with the longest values first.
+    for item in sort(copy(group), "s:sorterByLength")
+      let match = s:findinline(item)
+      if match[0] >= 0
+        return [group] + match
+      endif
+    endfor
+  endfor
+
+  return []
+endfunction
+
+function! s:sorterByLength(item, other)
+  return len(a:other) - len(a:item)
+endfunction
+
+" pulled the following out of speeddating.vim, modified slightly
+function! s:findatoffset(string,pattern,offset)
+    let line = a:string
+    let curpos = 0
+    let offset = a:offset
+    while strpart(line,offset,1) == " "
+        let offset += 1
+    endwhile
+    let [start,end,string] = s:match(line,a:pattern,curpos,0)
+    while start >= 0
+        if offset >= start && offset < end
+            break
+        endif
+        let curpos = start + 1
+        let [start,end,string] = s:match(line,a:pattern,curpos,0)
+    endwhile
+    return [start,end,string]
+endfunction
+
+function! s:findinline(pattern)
+    return s:findatoffset(getline('.'),a:pattern,col('.')-1)
+endfunction
+
+function! s:replaceinline(start,end,new)
+    let line = getline('.')
+    let before_text = strpart(line,0,a:start)
+    let after_text = strpart(line,a:end)
+    " If this generates a warning it will be attached to an ugly backtrace.
+    " No warning at all is preferable to that.
+    silent call setline('.',before_text.a:new.after_text)
+    call setpos("'[",[0,line('.'),strlen(before_text)+1,0])
+    call setpos("']",[0,line('.'),a:start+strlen(a:new),0])
+endfunction
+
+function! s:match(...)
+    let start   = call("match",a:000)
+    let end     = call("matchend",a:000)
+    let matches = call("matchlist",a:000)
+    if empty(matches)
+      let string = ''
+    else
+      let string = matches[0]
+    endif
+    return [start, end, string]
+endfunction
+
+nnoremap <silent> <C-A> :<C-U>call <SID>Cycle(1)<CR>
+nnoremap <silent> <C-X> :<C-U>call <SID>Cycle(-1)<CR>
+
+
+""" Check maps
+nnoremap <leader>? :map<leader><CR>
+nnoremap <localleader>? :map<localleader><CR>
+nnoremap <leader>:? :nmap<CR>
+
+"------------------------------------------------------------------------------------
+" Noremaps (Vim, Nvim)
+"------------------------------------------------------------------------------------
+
+""" Move to previous window split
+nnoremap <silent> <c-w>e :wincmd p<CR>
+
+""" Open Explorer
+nnoremap 'e :Ex<CR>
+nnoremap 'd :Lexplore<CR>
+
+""" Hide search highlights
+"nnoremap <leader>n :nohlsearch<CR> 
+nnoremap <silent> <leader>n :nohlsearch<C-R>=has('diff')?'<Bar>diffupdate':''<CR><CR><leader>n
+"nnoremap <Esc> :nohlsearch<CR> 
+
+""" Toggle line numbering
+nnoremap <F12> :call ChangeLineNumbering()<CR> 
+function! ChangeLineNumbering()
+	if !exists('g:original_signcolumn')
+		let g:original_signcolumn = &signcolumn
+	endif
+
+	if &number || &relativenumber
+		set nonumber
+		set norelativenumber
+		set signcolumn=no
+		set mouse=
+	else
+		set number
+		set relativenumber
+		set mouse=a
+		execute 'set signcolumn='.g:original_signcolumn
+	endif
+endfunction
+
+""" Auto format code
+nnoremap <Leader>=G mpgg=G'p
+
+"function! GrepFindFiles()
+"    let search_term = input("Grep > ")
+"    execute 'grep' search_term
+"endfunction
+"nnoremap <leader>g :call GrepFindFiles()<CR>
+
+""" Editor Messages
+
+nnoremap <localleader>m :messages<CR>
+nnoremap <localleader>r :registers<CR>
+nnoremap <localleader>b :buffers<CR>
+nnoremap <localleader>j :jumps<CR>
+nnoremap <localleader>m :marks<CR>
+
+
+
+"------------------------------------------------------------------------------------
+" Maps for vim only (not nvim)
+"------------------------------------------------------------------------------------
+if !has('nvim')
+	map Y y$
+endif
+
+
+"------------------------------------------------------------------------------------
+" Noremaps (Beethoven)
+"------------------------------------------------------------------------------------
+
+""" Source Config
+nnoremap <localleader>-- :e ~/.vim/vimrc<CR>
+nnoremap <localleader>== :w<CR>:so ~/.vim/vimrc<CR>:nohlsearch<CR>:echo "~/.vim/vimrc sourced"<CR>
+
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+" Plugins
+"""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""""
+
+" :PlugInstall to install plugins
+" :PlugUpdate to update plugins
+" :PlugDiff to review changes from last update
+" :PlugClean to remove plugins no longer in the list
+
+
+if !has('nvim') && !empty(glob('~/.vim/autoload/plug.vim'))
+	call plug#begin()
+
+	"------------------------------------------------------------------------------------
+	" Vim Plugged
+	"------------------------------------------------------------------------------------
+	
+	""" Mappings for CoCList
+	nnoremap <space>=u  :<C-u>PlugUpdate<CR>
+	nnoremap <space>=i  :<C-u>PlugInstall<CR>
+	nnoremap <space>=d  :<C-u>PlugDiff<CR>
+	nnoremap <space>=c  :<C-u>PlugClean<CR>
+
+	"------------------------------------------------------------------------------------
+	" FZF
+	"------------------------------------------------------------------------------------
+	let g:fzf_vim = {}
+	"let g:fzf_vim.preview_window = ['right,60%', 'ctrl-/']
+	let g:fzf_vim.preview_window = ['hidden,right,75%,<70(up,40%)', 'ctrl-/']
+	let $FZF_DEFAULT_COMMAND='find . \( -name node_modules -o -name .git \) -prune -o -print'
+	Plug 'junegunn/fzf', { 'do': { -> fzf#install() } }
+	Plug 'junegunn/fzf.vim'
+
+	nnoremap 'fe :Files<CR>
+	nnoremap 'fr :History<CR>
+	nnoremap 'f: :History:<CR>
+	nnoremap 'f/ :History/<CR>
+	nnoremap 'fd :GitFiles<CR>
+	nnoremap 'fD :GitFiles?<CR>
+	nnoremap 'fg :Rg<CR>
+	nnoremap 'fb :Buffers<CR>
+	nnoremap 'fc :Changes<CR>
+	nnoremap 'fm :Marks<CR>
+	nnoremap 'fj :Jumps<CR>
+	nnoremap 'fw :Windows<CR>
+	nnoremap 'ffc :Commands<CR>
+	nnoremap 'ffm :Maps<CR>
+	nnoremap 'fft :Filetypes<CR>
+	
+	"------------------------------------------------------------------------------------
+	" Neoformat
+	"------------------------------------------------------------------------------------
+
+	Plug 'sbdchd/neoformat'
+	let g:neoformat_try_node_exe = 1
+	nnoremap <leader>=g :Neoformat<CR>
+
+	augroup neofmt
+		autocmd!
+		"autocmd BufWritePre * undojoin | Neoformat
+		au BufWritePre * try | undojoin | Neoformat | catch /E790/ | Neoformat | endtry
+	augroup END
+
+	"------------------------------------------------------------------------------------
+	" CoC
+	"------------------------------------------------------------------------------------
+
+	"let g:coc_node_path = trim(system('which node'))
+	"if empty(g:coc_node_path)
+	"if executable('node') 
+	if 1==0 
+		let g:coc_disable_startup_warning = 1
+		" list of available extensions: 
+		" https://github.com/neoclide/coc.nvim/network/dependents?dependents_before=NDA0MzM0NjQyNA
+		" https://github.com/neoclide/coc.nvim/wiki/Using-coc-extensions
+		let g:coc_global_extensions = ['coc-explorer', 'coc-json', 'coc-tsserver', 'coc-xml', 'coc-vimlsp', 'coc-sh', 'coc-eslint', 'coc-markdownlint', 'coc-prisma', 'coc-sql', '@yaegassy/coc-tailwindcss3']
+
+		Plug 'pangloss/vim-javascript'					" JavaScript support
+		Plug 'leafgarland/typescript-vim'				" TypeScript syntax
+		Plug 'maxmellon/vim-jsx-pretty'					" JS and JSX syntax
+		Plug 'neoclide/coc.nvim', {'branch': 'release'} " Base CoC Plugin
+
+
+		""" CoC configuration
+		set encoding=utf-8
+		""Set the background color for the coc.nvim hover popup
+		"highlight CocFloating ctermbg=darkgray ctermfg=black guibg=#ff0000
+		"
+		"" Set the background color for the CocFloating border
+		"highlight CocFloatingBorder ctermbg=gray ctermfg=black
+		"
+		"" Set the background color for the active selection highlight
+		"highlight Visual ctermbg=red ctermfg=blue
+		"
+		"" Customize Pmenu (popup menu)
+		"highlight Pmenu ctermbg=gray ctermfg=black guibg=#ff0000 guifg=#ff0000
+		"
+		"" Customize PmenuSel (selected item in popup menu)
+		"highlight PmenuSel ctermbg=red ctermfg=white
+		"
+		"" Customize PmenuSbar (popup menu scrollbar)
+		"highlight PmenuSbar ctermbg=lightgray
+		"
+		"" Customize PmenuThumb (popup menu scrollbar thumb)
+		"highlight PmenuThumb ctermbg=darkgray
+
+
+		" Use tab for trigger completion with characters ahead and navigate
+		" NOTE: There's always complete item selected by default, you may want to enable
+		" no select by `"suggest.noselect": true` in your configuration file
+		" NOTE: Use command ':verbose imap <tab>' to make sure tab is not mapped by
+		" other plugin before putting this into your config
+		inoremap <silent><expr> <TAB>
+					\ coc#pum#visible() ? coc#pum#next(1) :
+					\ CheckBackspace() ? "\<Tab>" :
+					\ coc#refresh()
+		inoremap <expr><S-TAB> coc#pum#visible() ? coc#pum#prev(1) : "\<C-h>"
+
+		" Make <CR> to accept selected completion item or notify coc.nvim to format
+		" <C-g>u breaks current undo, please make your own choice
+		inoremap <silent><expr> <CR> coc#pum#visible() ? coc#pum#confirm()
+					\: "\<C-g>u\<CR>\<c-r>=coc#on_enter()\<CR>"
+
+		function! CheckBackspace() abort
+			let col = col('.') - 1
+			return !col || getline('.')[col - 1]  =~# '\s'
+		endfunction
+
+		" Use <c-space> to trigger completion
+		inoremap <silent><expr> <c-@> coc#refresh()
+
+		" Use `[g` and `]g` to navigate diagnostics
+		" Use `:CocDiagnostics` to get all diagnostics of current buffer in location list
+		nmap <silent> [d <Plug>(coc-diagnostic-prev)
+		nmap <silent> ]d <Plug>(coc-diagnostic-next)
+
+		" GoTo code navigation
+		nmap <silent> gd <Plug>(coc-definition)
+		nmap <silent> gD <Plug>(coc-type-definition)
+		nmap <silent> <leader>gr <Plug>(coc-implementation)
+		nmap <silent> gr <Plug>(coc-references)
+
+		"" Use K to show documentation in preview window
+		"nnoremap <silent> <leader>i :<C-u>call ShowDocumentation()<CR>
+
+		"function! ShowDocumentation()
+		"	if CocAction('hasProvider', 'hover')
+		"		call CocActionAsync('doHover')
+		"	else
+		"		"call feedkeys('K', 'in')
+		"	endif
+		"endfunction
+
+		" Symbol renaming
+		"nmap <localleader>rn <Plug>(coc-rename)
+
+		" Formatting selected code
+		"xmap <leader>f  <Plug>(coc-format-selected)
+		"nmap <leader>f  <Plug>(coc-format-selected)
+
+		"augroup mygroup
+	"		autocmd!
+			" Highlight the symbol and its references when holding the cursor
+			"autocmd CursorHold * silent call CocActionAsync('highlight')
+			"" Setup formatexpr specified filetype(s)
+" 			autocmd FileType typescript,json setl formatexpr=CocAction('formatSelected')
+			" Update signature help on jump placeholder
+			"autocmd User CocJumpPlaceholder call CocActionAsync('showSignatureHelp')
+	"	augroup end
+
+
+		" Applying code actions to the selected code block
+		" Example: `<leader>aap` for current paragraph
+		xmap <leader>a  <Plug>(coc-codeaction-selected)
+		nmap <leader>a  <Plug>(coc-codeaction-selected)
+
+		" Remap keys for applying code actions at the cursor position
+		nmap <leader>a.  <Plug>(coc-codeaction-cursor)
+		nmap <leader>.  <Plug>(coc-codeaction-cursor)
+		" Remap keys for apply code actions affect whole buffer
+		nmap <leader>a,  <Plug>(coc-codeaction-source)
+		nmap <leader>,  <Plug>(coc-codeaction-source)
+		" Apply the most preferred quickfix action to fix diagnostic on the current line
+		nmap <leader>aq  <Plug>(coc-fix-current)
+
+		" Remap keys for applying refactor code actions
+		"nmap <silent> <leader>re <Plug>(coc-codeaction-refactor)
+		"xmap <silent> <leader>r  <Plug>(coc-codeaction-refactor-selected)
+		"nmap <silent> <leader>r  <Plug>(coc-codeaction-refactor-selected)
+
+		" Run the Code Lens action on the current line
+		nmap <leader>al  <Plug>(coc-codelens-action)
+
+		" Map function and class text objects
+		" NOTE: Requires 'textDocument.documentSymbol' support from the language server
+		xmap if <Plug>(coc-funcobj-i)
+		omap if <Plug>(coc-funcobj-i)
+		xmap af <Plug>(coc-funcobj-a)
+		omap af <Plug>(coc-funcobj-a)
+		xmap ic <Plug>(coc-classobj-i)
+		omap ic <Plug>(coc-classobj-i)
+		xmap ac <Plug>(coc-classobj-a)
+		omap ac <Plug>(coc-classobj-a)
+
+		" Remap <C-f> and <C-b> to scroll float windows/popups
+		if has('nvim-0.4.0') || has('patch-8.2.0750')
+			nnoremap <silent><nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
+			nnoremap <silent><nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
+			inoremap <silent><nowait><expr> <C-f> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(1)\<cr>" : "\<Right>"
+			inoremap <silent><nowait><expr> <C-b> coc#float#has_scroll() ? "\<c-r>=coc#float#scroll(0)\<cr>" : "\<Left>"
+			vnoremap <silent><nowait><expr> <C-f> coc#float#has_scroll() ? coc#float#scroll(1) : "\<C-f>"
+			vnoremap <silent><nowait><expr> <C-b> coc#float#has_scroll() ? coc#float#scroll(0) : "\<C-b>"
+		endif
+
+		" Use CTRL-S for selections ranges
+		" Requires 'textDocument/selectionRange' support of language server
+		"nmap <silent> <C-s> <Plug>(coc-range-select)
+		"xmap <silent> <C-s> <Plug>(coc-range-select)
+
+		" Add `:Format` command to format current buffer
+		"command! -nargs=0 Format :call CocActionAsync('format')
+
+		" Add `:Fold` command to fold current buffer
+		"command! -nargs=? Fold :call     CocAction('fold', <f-args>)
+
+		" Add `:OR` command for organize imports of the current buffer
+		"command! -nargs=0 OR   :call     CocActionAsync('runCommand', 'editor.action.organizeImport')
+
+		" Add (Neo)Vim's native statusline support
+		" NOTE: Please see `:h coc-status` for integrations with external plugins that
+		" provide custom statusline: lightline.vim, vim-airline
+		"set statusline^=%{coc#status()}%{get(b:,'coc_current_function','')}
+		"let g:statusline_extra = "%{coc#status()}%{get(b:,'coc_current_function','')}"
+		let g:statusline_extra_right = " [%{coc#status()}%{get(b:,'coc_current_function','')}]"
+
+		""" Mappings for CoCList
+		nnoremap <silent><nowait> <space>s  :<C-u>CocCommand explorer<CR>
+		" Show all diagnostics
+		nnoremap <silent><nowait> <space>a  :<C-u>CocList diagnostics<cr>
+		" Manage extensions
+		nnoremap <silent><nowait> <space>x  :<C-u>CocList extensions<cr>
+		" Show commands
+		nnoremap <silent><nowait> <space>c  :<C-u>CocList commands<cr>
+		" Find symbol of current document
+		nnoremap <silent><nowait> <space>o  :<C-u>CocList outline<cr>
+		" Search workspace symbols
+		nnoremap <silent><nowait> <space>w  :<C-u>CocList -I symbols<cr>
+		" Do default action for next item
+		nnoremap <silent><nowait> <space>j  :<C-u>CocNext<CR>
+		" Do default action for previous item
+		nnoremap <silent><nowait> <space>k  :<C-u>CocPrev<CR>
+		" Resume latest coc list
+		nnoremap <silent><nowait> <space>p  :<C-u>CocListResume<CR>
+
+	else
+		let g:statusline_extra_right = " [nococ]"
+	endif
+
+
+	call plug#end()
+else
+	if filereadable(expand("~/.vim/conf/fzf.vim"))
+		source ~/.vim/conf/fzf.vim
+		nnoremap <leader>fe :FZF<CR>
+	endif
+endif 
+
