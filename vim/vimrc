@@ -121,6 +121,16 @@ set shortmess-=S  "shows seach counts on bottom right when searching
 if has('nvim')
 	set background=dark
 	set termguicolors
+
+	hi StatusLine         ctermbg=darkgray ctermfg=black guifg=#cccccc guibg=#090909
+	hi StatusLineNC       ctermbg=black ctermfg=darkgray guifg=#cccccc guibg=#090909
+	hi StatusLineSection  ctermbg=darkgray ctermfg=black guibg=#090909 guifg=#cccccc
+	hi StatusLineSectionV ctermbg=darkyellow ctermfg=black guifg=#f4bf75 guibg=#090909
+	hi StatusLineSectionI ctermbg=darkgreen ctermfg=black guifg=#90a959 guibg=#090909
+	hi StatusLineSectionC ctermbg=darkblue ctermfg=black guifg=#6a9fb5 guibg=#090909
+	hi StatusLineSectionR ctermbg=green ctermfg=black guifg=#aac474 guibg=#090909
+	hi Conceal cterm=underline ctermbg=black ctermfg=lightgray term=underline guifg=#090909 guibg=#cccccc
+
 endif
 
 if !has('nvim') 
@@ -388,6 +398,15 @@ inoremap <Insert> <Esc><Right>
 
 """ alternate way to enter visual block mode to deal with terminal emulators
 nnoremap <leader>v <C-v>
+
+
+""" Buffers
+" https://builtin.com/articles/working-with-buffers-in-vim
+nnoremap ]b :bnext<CR>
+nnoremap [b :bprevious<CR>
+nnoremap ]B :blast<CR>
+nnoremap [B :bfirst<CR>
+nnoremap <Leader>b :buffers<CR>:buffer<Space>
 
 """ Close Window
 nnoremap <leader>q :q<CR>
@@ -740,6 +759,7 @@ nnoremap <localleader>== :w<CR>:so ~/.vim/vimrc<CR>:nohlsearch<CR>:echo "~/.vim/
 
 if !has('nvim') && !empty(glob('~/.vim/autoload/plug.vim'))
 	call plug#begin()
+	Plug 'bluz71/vim-moonfly-colors', { 'as': 'moonfly' }
 
 	"------------------------------------------------------------------------------------
 	" Vim Plugged
@@ -797,8 +817,8 @@ if !has('nvim') && !empty(glob('~/.vim/autoload/plug.vim'))
 
 	"let g:coc_node_path = trim(system('which node'))
 	"if empty(g:coc_node_path)
-	"if executable('node') 
-	if 1==0 
+	"if 1==0 
+	if executable('node') 
 		let g:coc_disable_startup_warning = 1
 		" list of available extensions: 
 		" https://github.com/neoclide/coc.nvim/network/dependents?dependents_before=NDA0MzM0NjQyNA
@@ -991,7 +1011,6 @@ if !has('nvim') && !empty(glob('~/.vim/autoload/plug.vim'))
 else
 	if filereadable(expand("~/.vim/conf/fzf.vim"))
 		source ~/.vim/conf/fzf.vim
-		nnoremap <leader>fe :FZF<CR>
+		nnoremap 'fe :FZF<CR>
 	endif
 endif 
-
